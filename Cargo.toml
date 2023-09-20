@@ -1,0 +1,8 @@
+[workspace]
+
+members = [
+    "binary-search",
+    "two-crystal-balls",
+]
+
+resolver = "2"
