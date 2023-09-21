@@ -35,7 +35,12 @@ where
     fn deque(&mut self) -> Option<T> {
         let node = self.head.take()?;
         self.head = node.borrow().next.clone();
+
         self.length -= 1;
+        if self.length == 0 {
+            self.tail = None;
+        }
+
         let res = node.borrow().val;
         Some(res)
     }
