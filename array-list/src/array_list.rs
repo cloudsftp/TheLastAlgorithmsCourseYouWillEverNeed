@@ -18,14 +18,14 @@ where
         Self {
             length: 0,
             capacity: INITIAL_CAP,
-            arr: vec![Default::default(); INITIAL_CAP].into_boxed_slice(),
+            arr: vec![T::default(); INITIAL_CAP].into_boxed_slice(),
         }
     }
 
     fn push(&mut self, val: T) {
         if self.length == self.capacity {
             let new_capacity = self.capacity * 2;
-            let mut new_arr = vec![Default::default(); new_capacity].into_boxed_slice();
+            let mut new_arr = vec![T::default(); new_capacity].into_boxed_slice();
             new_arr[..self.capacity].copy_from_slice(&self.arr);
             self.arr = new_arr;
             self.capacity = new_capacity;
