@@ -3,6 +3,8 @@
 members = [
     "binary-search",
     "two-crystal-balls",
+    "bubble-sort",
+    "linked-list",
 ]
 
 resolver = "2"
