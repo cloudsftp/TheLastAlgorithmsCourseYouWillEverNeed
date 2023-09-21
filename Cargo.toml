@@ -5,6 +5,7 @@ members = [
     "two-crystal-balls",
     "bubble-sort",
     "linked-list",
+    "array-list",
 ]
 
 resolver = "2"
