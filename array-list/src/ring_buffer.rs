@@ -147,5 +147,24 @@ mod tests {
         for i in 12..28 {
             r.push(i);
         }
+        for i in 8..28 {
+            assert!(r.deque().is_ok_and(|j| j == i));
+        }
+        assert!(r.deque().is_err());
+    }
+
+    #[test]
+    fn test_deque_across_edge() {
+        let mut r = RingBuffer::<i32>::new();
+
+        for i in 0..12 {
+            r.push(i);
+        }
+        for i in 0..8 {
+            assert!(r.deque().is_ok_and(|j| j == i));
+        }
+        for i in 12..28 {
+            r.push(i);
+        }
     }
 }
