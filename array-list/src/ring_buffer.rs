@@ -45,8 +45,9 @@ where
                 self.end = new_end;
             } else {
                 let num_elem_right = self.capacity - self.start;
-                new_array[..num_elem_right].copy_from_slice(&self.arr[self.start..]);
-                new_array[num_elem_right..num_elem_right + self.end].copy_from_slice(&self.arr);
+                new_array[..num_elem_right].copy_from_slice(&self.arr[self.start..self.capacity]);
+                new_array[num_elem_right..num_elem_right + self.end]
+                    .copy_from_slice(&self.arr[..self.end]);
                 self.end += num_elem_right;
             }
             self.start = 0;
@@ -55,7 +56,7 @@ where
         }
 
         self.arr[self.end % self.capacity] = val;
-        self.end = self.end + 1 % self.capacity;
+        self.end = self.end % self.capacity + 1;
     }
 
     fn at(&self, i: usize) -> Result<T, Error> {
@@ -126,19 +127,25 @@ mod tests {
         assert!(r.deque().is_ok_and(|i| i == 1));
         assert!(r.deque().is_err());
 
-        r.push(2);
-        r.push(3);
-        r.push(4);
-        r.push(5);
-        r.push(6);
-        r.push(7);
-        r.push(8);
-        r.push(9);
-        r.push(10);
-        r.push(11);
-        r.push(12);
-        r.push(13);
+        for i in 2..14 {
+            r.push(i);
+        }
         assert!(r.deque().is_ok_and(|i| i == 2));
         assert_eq!(r.len(), 11);
+    }
+
+    #[test]
+    fn test_resize_across_edge() {
+        let mut r = RingBuffer::<i32>::new();
+
+        for i in 0..12 {
+            r.push(i);
+        }
+        for i in 0..8 {
+            assert!(r.deque().is_ok_and(|j| j == i));
+        }
+        for i in 12..28 {
+            r.push(i);
+        }
     }
 }
