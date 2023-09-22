@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Error};
 
 #[allow(dead_code)]
+#[derive(Debug)]
 struct RingBuffer<T> {
     start: usize, // including
     end: usize,   // excluding
@@ -13,7 +14,7 @@ const INITIAL_CAP: usize = 5;
 #[allow(dead_code)]
 impl<T> RingBuffer<T>
 where
-    T: Copy + Default,
+    T: Copy + Default + std::fmt::Debug,
 {
     fn new() -> Self {
         Self {
@@ -24,26 +25,36 @@ where
         }
     }
 
+    fn len(&self) -> usize {
+        if self.start > self.end {
+            self.capacity - self.start + self.end
+        } else {
+            self.end - self.start
+        }
+    }
+
     fn push(&mut self, val: T) {
         if self.start == 0 && self.end == self.capacity
-            || self.start > 0 && self.end == self.start - 1
+            || self.start > 0 && self.end % self.capacity == self.start - 1
         {
             let new_capacity = self.capacity * 2;
             let mut new_array = vec![T::default(); new_capacity].into_boxed_slice();
             if self.start <= self.end {
-                new_array[..self.end - self.start].copy_from_slice(&self.arr[self.start..])
+                let new_end = self.end - self.start;
+                new_array[..new_end].copy_from_slice(&self.arr[self.start..self.end]);
+                self.end = new_end;
             } else {
                 let num_elem_right = self.capacity - self.start;
                 new_array[..num_elem_right].copy_from_slice(&self.arr[self.start..]);
                 new_array[num_elem_right..num_elem_right + self.end].copy_from_slice(&self.arr);
-                self.start = 0;
                 self.end += num_elem_right;
             }
+            self.start = 0;
             self.arr = new_array;
             self.capacity = new_capacity;
         }
 
-        self.arr[self.end] = val;
+        self.arr[self.end % self.capacity] = val;
         self.end = self.end + 1 % self.capacity;
     }
 
@@ -58,7 +69,7 @@ where
     }
 
     fn pop(&mut self) -> Result<T, Error> {
-        if self.end == self.start {
+        if self.len() == 0 {
             return Err(anyhow!("buffer empty"));
         }
 
@@ -70,7 +81,15 @@ where
         Ok(self.arr[self.end])
     }
 
-    //deque
+    fn deque(&mut self) -> Result<T, Error> {
+        if self.len() == 0 {
+            return Err(anyhow!("buffer empty"));
+        }
+
+        let prev = self.start;
+        self.start = self.start + 1 % self.capacity;
+        Ok(self.arr[prev])
+    }
 }
 
 #[cfg(test)]
@@ -97,5 +116,29 @@ mod tests {
         assert!(r.pop().is_ok_and(|i| i == 1));
         assert!(r.pop().is_ok_and(|i| i == 0));
         assert!(r.pop().is_err());
+    }
+
+    #[test]
+    fn deque_works() {
+        let mut r = RingBuffer::<i32>::new();
+
+        r.push(1);
+        assert!(r.deque().is_ok_and(|i| i == 1));
+        assert!(r.deque().is_err());
+
+        r.push(2);
+        r.push(3);
+        r.push(4);
+        r.push(5);
+        r.push(6);
+        r.push(7);
+        r.push(8);
+        r.push(9);
+        r.push(10);
+        r.push(11);
+        r.push(12);
+        r.push(13);
+        assert!(r.deque().is_ok_and(|i| i == 2));
+        assert_eq!(r.len(), 11);
     }
 }
