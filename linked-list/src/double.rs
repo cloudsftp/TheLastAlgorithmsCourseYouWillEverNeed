@@ -22,7 +22,7 @@ struct List<T> {
 #[allow(dead_code)]
 impl<T> List<T>
 where
-    T: Copy,
+    T: Copy + Eq,
 {
     fn new() -> Self {
         Self {
@@ -38,16 +38,34 @@ where
         for _ in 0..i {
             match curr {
                 None => return Err(anyhow!("index {i} is out of bounds")),
-                Some(link) => {
-                    curr = link.borrow().next.clone();
+                Some(node) => {
+                    curr = node.borrow().next.clone();
                 }
             }
         }
 
         match curr {
             None => Err(anyhow!("index {i} is out of bounds")),
-            Some(link) => Ok(link),
+            Some(node) => Ok(node),
         }
+    }
+
+    fn walk_to_value(&self, val: T) -> Result<Rc<RefCell<Node<T>>>, Error> {
+        let mut curr = self.head.clone();
+
+        loop {
+            match curr {
+                None => break,
+                Some(node) => {
+                    if node.borrow().val == val {
+                        return Ok(node);
+                    }
+                    curr = node.borrow().next.clone();
+                }
+            }
+        }
+
+        Err(anyhow!("value not found"))
     }
 
     fn get(&self, i: usize) -> Result<T, Error> {
@@ -105,7 +123,7 @@ where
     }
 
     fn insert_at(&mut self, i: usize, val: T) -> Result<(), Error> {
-        if i < 0 || i > self.len {
+        if i > self.len {
             return Err(anyhow!("index {i} is out of bounds"));
         }
 
@@ -133,9 +151,36 @@ where
             prev: Some(prev.clone()),
         })));
 
-        prev.borrow_mut().next = node.clone();
-        next.borrow_mut().prev = node;
+        prev.as_ref().borrow_mut().next = node.clone();
+        next.as_ref().borrow_mut().prev = node;
         Ok(())
+    }
+
+    fn delete_at(&mut self, i: usize) -> Result<(), Error> {
+        let node = self.walk_to_index(i)?;
+        self.delete_node(node);
+        Ok(())
+    }
+
+    fn delete(&mut self, val: T) -> Result<(), Error> {
+        let node = self.walk_to_value(val)?;
+        self.delete_node(node);
+        Ok(())
+    }
+
+    fn delete_node(&mut self, node: Rc<RefCell<Node<T>>>) {
+        let prev = node.as_ref().borrow_mut().prev.take();
+        let next = node.as_ref().borrow_mut().next.take();
+
+        match prev.clone() {
+            None => self.head = next.clone(),
+            Some(prev) => prev.as_ref().borrow_mut().next = next.clone(),
+        }
+        match next {
+            None => self.tail = prev,
+            Some(next) => next.as_ref().borrow_mut().prev = prev,
+        }
+        self.len -= 1;
     }
 }
 
@@ -226,5 +271,41 @@ mod test {
 
         println!("{l}");
         assert!(list_equals(&l, &[0, 1, 10, 2, 3, 4]))
+    }
+
+    #[test]
+    fn delete_at() {
+        let mut l = List::<i32>::new();
+        l.append(0);
+        l.append(1);
+        l.append(2);
+        l.append(3);
+        l.append(4);
+
+        l.delete_at(2).unwrap();
+        println!("{l}");
+        assert!(list_equals(&l, &[0, 1, 3, 4]));
+
+        l.delete_at(0).unwrap();
+        println!("{l}");
+        assert!(list_equals(&l, &[1, 3, 4]));
+
+        l.delete_at(2).unwrap();
+        println!("{l}");
+        assert!(list_equals(&l, &[1, 3]))
+    }
+
+    #[test]
+    fn delete() {
+        let mut l = List::<i32>::new();
+        l.append(0);
+        l.append(1);
+        l.append(2);
+        l.append(3);
+        l.append(4);
+
+        l.delete(2).unwrap();
+        println!("{l}");
+        assert!(list_equals(&l, &[0, 1, 3, 4]));
     }
 }
