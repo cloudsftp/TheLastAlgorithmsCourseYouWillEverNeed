@@ -6,6 +6,8 @@ members = [
     "bubble-sort",
     "linked-list",
     "array-list",
+    "recursion",
+    "quick-sort",
 ]
 
 resolver = "2"
