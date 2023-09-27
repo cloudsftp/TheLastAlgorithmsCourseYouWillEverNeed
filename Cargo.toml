@@ -2,6 +2,7 @@
 
 members = [
     "binary-search",
+    "binary-tree",
     "two-crystal-balls",
     "bubble-sort",
     "linked-list",
