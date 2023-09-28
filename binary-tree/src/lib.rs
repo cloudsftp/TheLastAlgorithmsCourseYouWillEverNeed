@@ -1,5 +1,6 @@
 #![feature(test)]
 
+mod traversal_bredth;
 mod traversal_functional;
 mod traversal_procedural;
 
