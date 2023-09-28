@@ -1,4 +1,25 @@
+use std::mem;
+
 use crate::{new_link, BinaryTree, Link, Node};
+
+// Could be impl if I had a proper Link<T> struct :/
+fn walk_insert<T>(link: &mut Link<T>, value: T)
+where
+    T: Ord,
+{
+    match link {
+        None => {
+            let _ = mem::replace(link, new_link(value));
+        }
+        Some(node) => {
+            if node.value < value {
+                walk_insert(&mut node.right, value)
+            } else {
+                walk_insert(&mut node.left, value)
+            }
+        }
+    }
+}
 
 impl<T> Node<T>
 where
@@ -11,20 +32,6 @@ where
             walk_find(&self.left, value)
         } else {
             walk_find(&self.right, value)
-        }
-    }
-
-    fn insert(&mut self, value: T) {
-        if self.value >= value {
-            match &mut self.left {
-                None => self.left = new_link(value),
-                Some(node) => node.insert(value),
-            }
-        } else {
-            match &mut self.right {
-                None => self.right = new_link(value),
-                Some(node) => node.insert(value),
-            }
         }
     }
 }
@@ -49,16 +56,7 @@ where
     }
 
     fn insert(&mut self, value: T) {
-        match &mut self.root {
-            None => {
-                self.root = Some(Box::new(Node {
-                    value,
-                    left: None,
-                    right: None,
-                }))
-            }
-            Some(node) => node.insert(value),
-        }
+        walk_insert(&mut self.root, value)
     }
 }
 
