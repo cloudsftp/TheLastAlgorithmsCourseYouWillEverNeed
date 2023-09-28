@@ -9,6 +9,7 @@ members = [
     "array-list",
     "recursion",
     "quick-sort",
+    "priority-queue",
 ]
 
 resolver = "2"
