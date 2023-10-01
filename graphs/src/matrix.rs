@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 pub struct Graph {
     edges: Vec<Vec<Option<i32>>>,
 }
@@ -24,30 +26,50 @@ impl Graph {
 
     pub fn breadth_first_search(&self, src: usize, tgt: usize) -> Option<Vec<usize>> {
         let mut visited = vec![false; self.edges.len()];
-        let mut queue = vec![vec![src]];
+        visited[src] = true;
+        let mut prev = vec![None; self.edges.len()];
+        let mut queue = vec![src];
 
         while !queue.is_empty() {
-            let path = queue.pop().expect("q is non-empty");
-            let curr = *path.last().expect("path should be non-empty");
+            let curr = queue.pop().expect("q is non-empty");
             if curr == tgt {
-                return Some(path);
+                break;
             }
-
-            if visited[curr] {
-                continue;
-            }
-            visited[curr] = true;
 
             for (i, e) in self.edges[curr].iter().enumerate() {
-                if let Some(_) = e {
-                    let mut new_path = path.clone();
-                    new_path.push(i);
-                    queue.push(new_path);
-                }
+                walk_edge(curr, i, e, &mut queue, &mut prev, &mut visited)
             }
         }
 
-        None
+        build_path(tgt, prev)
+    }
+}
+
+fn build_path(tgt: usize, prev: Vec<Option<usize>>) -> Option<Vec<usize>> {
+    prev[tgt].map(|mut curr| {
+        let mut path = VecDeque::from([curr, tgt]);
+        while let Some(prev) = prev[curr] {
+            path.push_front(prev);
+            curr = prev;
+        }
+        path.into()
+    })
+}
+
+fn walk_edge(
+    curr: usize,
+    i: usize,
+    e: &Option<i32>,
+    queue: &mut Vec<usize>,
+    prev: &mut Vec<Option<usize>>,
+    visited: &mut Vec<bool>,
+) {
+    if let Some(_) = e {
+        if !visited[i] {
+            queue.push(i);
+            prev[i] = Some(curr);
+            visited[i] = true;
+        }
     }
 }
 
